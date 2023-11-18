@@ -19,6 +19,6 @@ let readDict =
             let myEmph = spl[2..] |> List.map (fun s -> if s.Contains("2") then "2" else (if s.Contains("1") then "1" else (if s.Contains("0") then "0" else ""))) |> (String.concat "")
             {word = spl[0]; emph = myEmph; rhyme = myRhyme} :: (helper xs)
     
-    let x = helper (dictList[0..10000] |> Array.toList)
+    let x = helper (dictList[0..100000] |> Array.toList)
     // printfn "%A" x[0..5]
     0
