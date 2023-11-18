@@ -18,11 +18,13 @@ let rec repl() : unit =
 
 [<EntryPoint>]
 let main args =
-    let file = args.[0]
-    let input = File.ReadAllText file
+    // let file = args.[0]
+    // let input = File.ReadAllText file
 
-    let astOp = parse input
-    match astOp with
-    | Some ast -> printfn "%A" (ast)
-    | None -> ()
+    // let astOp = parse input
+    // match astOp with
+    // | Some ast -> printfn "%A" (ast)
+    // | None -> ()
+
+    let x = readDict
     0
