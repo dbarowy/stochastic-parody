@@ -20,3 +20,4 @@ let main args =
     // | ex -> printfn "%A" "Usage: dotnet run <file.song>"
 
     0
+

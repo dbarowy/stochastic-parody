@@ -7,12 +7,14 @@ open System.Collections
 type Entry = { word: string; emph: string; rhyme: string List}
 type features = { emph: string; rhyme: string List}
 
+let reuse = new Hashtable()
 
 // run checker for if words are in dictionary before running evaluator
-let readDict =
-    let wordToFeature = new Hashtable();
-    let emphToWord = new Hashtable();
-    let commonEmphToWord = new Hashtable();
+let readDict (preferredArr: string list) =
+    let wordToFeature = new Hashtable()
+    let emphToWord = new Hashtable()
+    let commonEmphToWord = new Hashtable()
+    let preferredEmphToWord = new Hashtable()
 
 
     let dict = File.ReadAllText "cmu_dict"
@@ -60,8 +62,24 @@ let readDict =
         // commonEmphToWord.Add(i, emphToWord[i])
     
         )
+
+    let dummy = preferredArr |> List.map (fun i ->
+        let feat: features = wordToFeature[(i.ToUpper())] |> unbox
+        let myEmph = feat.emph
+        if preferredEmphToWord.ContainsKey(myEmph) then
+            //  (emphToWord[myEmph] = spl[0]::(emphToWord[myEmph]))
+           let old: string list = preferredEmphToWord[myEmph] |> unbox
+           preferredEmphToWord.Remove(myEmph)
+           preferredEmphToWord.Add(myEmph, box (i::old))
+
+        else
+            preferredEmphToWord.Add(myEmph, box [i])
         
-    (wordToFeature, emphToWord, commonEmphToWord)
+    
+        )
+    
+        
+    (wordToFeature, emphToWord, commonEmphToWord, preferredEmphToWord)
 
 let evalSentiment sent = 
     if sent = "happy" then ["adore"; "apple"; "atop"] else []
@@ -85,30 +103,41 @@ let evalKeywords kws =
 
 // TODO: add common words
 // TODO: basically we take 
-let convert (lines: string list) (wtf: Hashtable) (etw: Hashtable) (cetw: Hashtable) =
+let convert (lines: TranslationUnit list) (wtf: Hashtable) (etw: Hashtable) (cetw: Hashtable) (petw: Hashtable)=
     // let len = ((Array.length cmuDict) - 1)
 
     let rnd = System.Random()
-    let rec helpConvert ls = 
-        match (ls: string list) with 
+    let rec helpConvert (ls: TranslationUnit list) = 
+        match (ls: TranslationUnit list) with 
         | [] -> []
         | x::xs -> 
-            let myWord: features = wtf[(x.ToUpper())] |> unbox // used to be len
-            let (myEmph: string) = myWord.emph
-            // printfn "%A" myWord
-            let translator = if cetw.ContainsKey(myEmph) then cetw else etw
-            let wordList: string list = (translator[myEmph]) |> unbox
-            let len = wordList.Length
-            // printfn "%A" (etw.ContainsKey(myEmph))
-            // printfn "%A" (wordList[0])
-            let newWord = wordList[rnd.Next() % (len - 1)] //rnd.Next() % len
+                if x.translate = true then
+                    if reuse.ContainsKey(x.word) then 
+                        let reusedWord = reuse[x.word] |> unbox
+                        reusedWord::(helpConvert xs)
+                    else 
+                        let myWord: features = wtf[(x.word.ToUpper())] |> unbox // used to be len
+                        let (myEmph: string) = myWord.emph
+                        // printfn "%A" myWord
+                        let translator = if petw.ContainsKey(myEmph) then petw else if cetw.ContainsKey(myEmph) then cetw else etw
+                        let wordList: string list = (translator[myEmph]) |> unbox
+                        let len = wordList.Length
+                        // printfn "%A" (etw.ContainsKey(myEmph))
+                        // printfn "%A" (wordList[0])
+                        let newWord = wordList[rnd.Next() % (len)] 
 
-            newWord::(helpConvert xs)
+                        let updatedWordList = wordList |> List.filter(fun x -> x <> newWord)
+                        translator.Remove(myEmph)
+                        if updatedWordList.Length <> 0 then
+                            translator.Add(myEmph, updatedWordList)
+                        reuse.Add(x.word, newWord)
+                        newWord::(helpConvert xs)
+                else 
+                    x.word::(helpConvert xs)
     helpConvert lines
 
 let evalProg (ps: Expr list) = 
     // TODO combine
-    let wtf, etw, cetw = readDict
     let wordList = 
         (match ps[0] with
         | Sentiment x -> evalSentiment x
@@ -119,7 +148,8 @@ let evalProg (ps: Expr list) =
         | Keywords x -> evalKeywords x
         | Line x -> []
 
-        
+    let wtf, etw, cetw, petw = readDict wordList
+    
     let rec helper (ls: Expr list) = 
         match ls with
         | [] -> []
@@ -132,7 +162,7 @@ let evalProg (ps: Expr list) =
                 helper xs
 
             | Line x ->
-                (convert x wtf etw cetw) :: helper xs
+                (convert x wtf etw cetw petw) :: helper xs
 
 
     (helper ps[2..])
