@@ -4,10 +4,20 @@ open System.IO
 
 open System.Collections
 
+type wordAndPOS =
+| Noun of string
+| Adj of string
+| Verb of string
+| Adv of string
+| Other of string
+
+// type wordAndPOS = {word : string; partOfSpeech: PartOfSpeech}
 type Entry = { word: string; emph: string; rhyme: string List}
 type features = { emph: string; rhyme: string List}
 
 let reuse = new Hashtable()
+
+
 
 // run checker for if words are in dictionary before running evaluator
 let readDict (preferredArr: string list) =
@@ -20,8 +30,34 @@ let readDict (preferredArr: string list) =
     let dict = File.ReadAllText "cmu_dict"
     let common = File.ReadAllText "common.txt"
 
+    let noun_dict = File.ReadAllText "dict_noun.txt"
+    let adj_dict = File.ReadAllText "dict_adj.txt"
+    let verb_dict = File.ReadAllText "dict_verb.txt"
+    let adv_dict = File.ReadAllText "dict_adv.txt"
+
+
+
     let dictArr = dict.Split('\n')
     let commonArr = common.Split('\n')
+    
+    let nounKey = noun_dict.Split('\n')
+    let adjKey = adj_dict.Split('\n')
+    let verbKey = verb_dict.Split('\n')
+    let advKey = adv_dict.Split('\n')
+
+
+    let addPOStoWord (word:string): wordAndPOS = 
+    // wordList |> List.filter(fun x -> x <> newWord)
+        if (nounKey |> Array.filter(fun x -> x = word) |> Array.length) <> 0 then 
+            Noun word
+        else if (adjKey |> Array.filter(fun x -> x = word) |> Array.length) <> 0 then 
+            Adj word
+        else if (verbKey |> Array.filter(fun x -> x = word) |> Array.length) <> 0 then 
+            Verb word
+        else if (advKey |> Array.filter(fun x -> x = word) |> Array.length) <> 0 then 
+            Adv word
+        else 
+            Other word
 
     // let cinds = [|0.. (Array.length commonArr) - 1|]
     
