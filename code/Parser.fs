@@ -1,11 +1,13 @@
 module Parser
 open Combinator
 
-type TranslationUnit = {translate : bool; word: string}
+type TranslationUnit = {translate : bool; rhyme: bool; word: string}
 
 // TODO: can tell it to maintain rhyme??
-// TODO: ignore commas / apostrophies
+// TODO: can map numbers to words 1-> one
 
+// ! is translate no rhyme
+// $ is translate and rhyme
 
 type Expr =
 | Sentiment of string
@@ -24,9 +26,12 @@ let pcletter = pletter <|> (pchar ''')
 
 let pneed a b c = (pseq a b c) <|> (pseq b a c) 
 let pword = (pmany1 pcletter) |>> stringify |>> (fun x -> if x[x.Length-3..x.Length-1] = "in'" then x[0..x.Length-4] + "ing" else x)
-let pword_no_translate = pword |>> (fun (x) -> {translate = false; word = x})
-let pword_translate = pseq (pchar '!') pword (fun (x, y) -> {translate = true; word = y})
-let pword_translation_unit = pword_no_translate <|> pword_translate
+let pword_no_translate = pword |>> (fun (x) -> {translate = false; word = x; rhyme = false})
+let pword_translate = pseq (pchar '!') pword (fun (x, y) -> {translate = true; word = y; rhyme = false})
+
+let pword_rhyme = pseq (pchar '$') pword (fun (x, y) -> {translate = true; word = y; rhyme = true})
+
+let pword_translation_unit = pword_no_translate <|> pword_translate <|> pword_rhyme
 let pline = pseq (pmany0 (pleft (pword_translation_unit) pignore)) (pleft pword_translation_unit pnl) (fun (f, e) -> Line (f @ [e]))
 
 let pkeywords = pleft ((pright (pstr "<KEYWORDS>") (pmany0 (pright pspace1 pword))) |>> (fun x -> Keywords x)) pnl
