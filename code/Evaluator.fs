@@ -2,9 +2,9 @@ module Evaluator
 open Parser
 open System.IO
 open Sentiments
-
-
 open System.Collections
+
+// TODO: just doesnt translate or warn
 
 // type EmphAndPOS = {Emph: string; POS: string}
 

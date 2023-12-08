@@ -3,7 +3,7 @@ open Combinator
 
 type TranslationUnit = {translate : bool; rhyme: bool; word: string}
 
-// TODO: can tell it to maintain rhyme??
+// TODO: make sure doesnt have weird ws bugs
 // TODO: can map numbers to words 1-> one
 
 // ! is translate no rhyme
