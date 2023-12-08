@@ -1,19 +1,24 @@
 module Evaluator
 open Parser
 open System.IO
+open Sentiments
 
 open System.Collections
 
-type wordAndPOS =
-| Noun of string
-| Adj of string
-| Verb of string
-| Adv of string
-| Other of string
+// type EmphAndPOS =
+// | Noun of string
+// | Adj of string
+// | Verb of string
+// | Adv of string
+// | Other of string
 
+type EmphAndPOS = {Emph: string; POS: string}
+
+let MATCH_POS = true
+let SEE_TRANSLATION = false
 // type wordAndPOS = {word : string; partOfSpeech: PartOfSpeech}
-type Entry = { word: string; emph: string; rhyme: string List}
-type features = { emph: string; rhyme: string List}
+type Entry = { word: string; emphAndPOS: EmphAndPOS; rhyme: string List}
+type features = { emphAndPOS: EmphAndPOS; rhyme: string List}
 
 let reuse = new Hashtable()
 
@@ -27,7 +32,7 @@ let readDict (preferredArr: string list) =
     let preferredEmphToWord = new Hashtable()
 
 
-    let dict = File.ReadAllText "cmu_dict"
+    let dict = File.ReadAllText "cmu_pos_dict.txt"
     let common = File.ReadAllText "common.txt"
 
     let noun_dict = File.ReadAllText "dict_noun.txt"
@@ -46,18 +51,21 @@ let readDict (preferredArr: string list) =
     let advKey = adv_dict.Split('\n')
 
 
-    let addPOStoWord (word:string): wordAndPOS = 
-    // wordList |> List.filter(fun x -> x <> newWord)
-        if (nounKey |> Array.filter(fun x -> x = word) |> Array.length) <> 0 then 
-            Noun word
-        else if (adjKey |> Array.filter(fun x -> x = word) |> Array.length) <> 0 then 
-            Adj word
-        else if (verbKey |> Array.filter(fun x -> x = word) |> Array.length) <> 0 then 
-            Verb word
-        else if (advKey |> Array.filter(fun x -> x = word) |> Array.length) <> 0 then 
-            Adv word
-        else 
-            Other word
+    // let addPOStoEmph (word:string) (emph:string): EmphAndPOS = 
+    // // wordList |> List.filter(fun x -> x <> newWord)
+    //     if (MATCH_POS) then 
+    //         if (advKey |> Array.filter(fun x -> x = word.ToLower()) |> Array.length) <> 0 then 
+    //             {Emph = emph; POS = "Adv"}
+    //         else if (verbKey |> Array.filter(fun x -> x = word.ToLower()) |> Array.length) <> 0 then 
+    //             {Emph = emph; POS = "Verb"}
+    //         else if (adjKey |> Array.filter(fun x -> x = word.ToLower()) |> Array.length) <> 0 then 
+    //             {Emph = emph; POS = "Adj"}
+    //         else if (nounKey |> Array.filter(fun x -> x = word.ToLower()) |> Array.length) <> 0 then 
+    //             {Emph = emph; POS = "Noun"}
+    //         else 
+    //             {Emph = emph; POS = "Other"}
+    //     else 
+    //         {Emph = emph; POS = "Other"}
 
     // let cinds = [|0.. (Array.length commonArr) - 1|]
     
@@ -69,23 +77,25 @@ let readDict (preferredArr: string list) =
         let spl: string list = dictArr[i].Split(' ') |> Array.toList
         let len = (List.length spl)
         let myRhyme = if len <= 3 then [spl[len - 1]] else [spl[len - 2] ; spl[len - 1]]
+        let myPOS = spl[1]
         let myEmph = spl[2..] |> List.map (fun s -> if s.Contains("2") then "2" else (if s.Contains("1") then "1" else (if s.Contains("0") then "0" else ""))) |> (String.concat "")
-        wordToFeature.Add(spl[0], box {emph = myEmph; rhyme = myRhyme})
-        if emphToWord.ContainsKey(myEmph) then
+        let myEmphAndPOS = {Emph = myEmph; POS = myPOS}//addPOStoEmph spl[0] myEmph
+        wordToFeature.Add(spl[0], box {emphAndPOS = myEmphAndPOS; rhyme = myRhyme})
+        if emphToWord.ContainsKey(myEmphAndPOS) then
             //  (emphToWord[myEmph] = spl[0]::(emphToWord[myEmph]))
-           let old: string list= emphToWord[myEmph] |> unbox
-           emphToWord.Remove(myEmph)
-           emphToWord.Add(myEmph, box (spl[0]::old))
+           let old: string list= emphToWord[myEmphAndPOS] |> unbox
+           emphToWord.Remove(myEmphAndPOS)
+           emphToWord.Add(myEmphAndPOS, box (spl[0]::old))
 
         else
-            emphToWord.Add(myEmph, box [spl[0]])
+            emphToWord.Add(myEmphAndPOS, box [spl[0]])
         
         )
     // for i in 0.. (Array.length dictArr) - 1 do
 
     let dummy = commonArr |> Array.map (fun i ->
         let feat: features = wordToFeature[(i.ToUpper())] |> unbox
-        let myEmph = feat.emph
+        let myEmph = feat.emphAndPOS
         if commonEmphToWord.ContainsKey(myEmph) then
             //  (emphToWord[myEmph] = spl[0]::(emphToWord[myEmph]))
            let old: string list = commonEmphToWord[myEmph] |> unbox
@@ -100,42 +110,31 @@ let readDict (preferredArr: string list) =
         )
 
     let dummy = preferredArr |> List.map (fun i ->
-        let feat: features = wordToFeature[(i.ToUpper())] |> unbox
-        let myEmph = feat.emph
-        if preferredEmphToWord.ContainsKey(myEmph) then
-            //  (emphToWord[myEmph] = spl[0]::(emphToWord[myEmph]))
-           let old: string list = preferredEmphToWord[myEmph] |> unbox
-           preferredEmphToWord.Remove(myEmph)
-           preferredEmphToWord.Add(myEmph, box (i::old))
+        if wordToFeature.ContainsKey((i.ToUpper())) then
+            let feat: features = wordToFeature[(i.ToUpper())] |> unbox
+            let myEmph = feat.emphAndPOS
+            if preferredEmphToWord.ContainsKey(myEmph) then
+                //  (emphToWord[myEmph] = spl[0]::(emphToWord[myEmph]))
+                let old: string list = preferredEmphToWord[myEmph] |> unbox
+                preferredEmphToWord.Remove(myEmph)
+                preferredEmphToWord.Add(myEmph, box (i::old))
 
-        else
-            preferredEmphToWord.Add(myEmph, box [i])
-        
-    
+            else
+                preferredEmphToWord.Add(myEmph, box [i])
+            
         )
     
         
     (wordToFeature, emphToWord, commonEmphToWord, preferredEmphToWord)
 
 let evalSentiment sent = 
-    if sent = "happy" then ["adore"; "apple"; "atop"] else []
+    if sent = "happy" then happy_sentiment
+    else if sent = "depressing" then depressing_sentiment
+    else []
 
 
 let evalKeywords kws = 
     kws
-
-// let rec searchWord n (word: string) (cmuDict: Entry array) = 
-
-//     match n with
-//     | -1 -> {word = "FAIL"; emph = "FAIL"; rhyme = ["FAIL"]}
-//     | i -> 
-//         if (cmuDict[i].word = word.ToUpper()) then cmuDict[i] else searchWord (n - 1)  word cmuDict 
-
-// // TODO make this be a mod circle
-// let rec searchEmph emph n (word: string) (cmuDict: Entry array) = 
-//     match n with
-//     | -1 -> {word = "FAIL"; emph = "FAIL"; rhyme = ["FAIL"]}
-//     | i -> if cmuDict[i].emph = emph && cmuDict[i].word <> word.ToUpper() then cmuDict[i] else searchEmph emph (n - 1) word cmuDict 
 
 // TODO: add common words
 // TODO: basically we take 
@@ -151,22 +150,40 @@ let convert (lines: TranslationUnit list) (wtf: Hashtable) (etw: Hashtable) (cet
                     if reuse.ContainsKey(x.word) then 
                         let reusedWord = reuse[x.word] |> unbox
                         reusedWord::(helpConvert xs)
-                    else 
+                    else
+                        if wtf.ContainsKey(x.word.ToUpper()) = false then 
+                                printfn "Word %A is not contained in the CMU Dictionary" x.word
+                                printfn "Exiting"
+                                exit(-1)
                         let myWord: features = wtf[(x.word.ToUpper())] |> unbox // used to be len
-                        let (myEmph: string) = myWord.emph
+                        let (myEmphAndPOS: EmphAndPOS) = myWord.emphAndPOS
                         // printfn "%A" myWord
-                        let translator = if petw.ContainsKey(myEmph) then petw else if cetw.ContainsKey(myEmph) then cetw else etw
-                        let wordList: string list = (translator[myEmph]) |> unbox
+                        let translator = (
+                            if petw.ContainsKey(myEmphAndPOS) then
+                                petw
+                            else if cetw.ContainsKey(myEmphAndPOS) then
+                                cetw
+                            else// if etw.ContainsKey(myEmphAndPOS) then
+                                etw
+                            // else
+                            //     printfn "Word is not contained in the CMU Dictionary"
+                            //     printfn "Exiting"
+
+                            //     exit(-1)
+                            )
+                        let wordList: string list = (translator[myEmphAndPOS]) |> unbox
                         let len = wordList.Length
                         // printfn "%A" (etw.ContainsKey(myEmph))
                         // printfn "%A" (wordList[0])
                         let newWord = wordList[rnd.Next() % (len)] 
 
                         let updatedWordList = wordList |> List.filter(fun x -> x <> newWord)
-                        translator.Remove(myEmph)
+                        translator.Remove(myEmphAndPOS)
                         if updatedWordList.Length <> 0 then
-                            translator.Add(myEmph, updatedWordList)
+                            translator.Add(myEmphAndPOS, updatedWordList)
                         reuse.Add(x.word, newWord)
+                        if SEE_TRANSLATION then printfn "%A, %A, %A, %A" x.word newWord myEmphAndPOS.POS myEmphAndPOS.Emph
+                        
                         newWord::(helpConvert xs)
                 else 
                     x.word::(helpConvert xs)
@@ -184,7 +201,9 @@ let evalProg (ps: Expr list) =
         | Keywords x -> evalKeywords x
         | Line x -> []
 
+    printfn "Assembing Dictionary"
     let wtf, etw, cetw, petw = readDict wordList
+    printfn "Dictionary Complete"
     
     let rec helper (ls: Expr list) = 
         match ls with
