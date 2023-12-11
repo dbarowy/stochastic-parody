@@ -12,6 +12,8 @@ let main args =
     let astOp = parse input
     match astOp with
     | Some ast -> printfn "%A" (prettyprint (evalProg ast))
+    // | Some ast -> printfn "%A" (ast)
+
     | None -> ()
 
     // let d1, d2 = readDict
