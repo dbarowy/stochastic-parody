@@ -6,7 +6,6 @@ type TranslationUnit = {translate : bool; rhyme: bool; word: string}
 // TODO: make sure doesnt have weird ws bugs
 // TODO: can map numbers to words 1-> one
 // TODO: default to translate all?
-// TODO: the cmu dict didnt get rid of numbers i.e. WORD(1) -> WORD1
 // TODO: cant handle empty sentiment
 // ! is translate no rhyme
 // $ is translate and rhyme
@@ -64,8 +63,6 @@ let pkeywords = pleft ((pright (pstr "<KEYWORDS>") (pmany0 (pright pspace1 pword
 let psentiment = pleft (pright (pstr "<SENTIMENT>") ((pright pspace1 pword) |>> (fun x -> Sentiment x))) pnl1
 
 let psection_name = (pleft (pright (pchar '*') (pmany1 pletter)) pnl1) |>> stringify |>> Section_name
-// let psection_declarating = pmany1 pletter |>> stringify
-
 
 let psection = pleft (pseq 
                         (pmany1 pletter |>> stringify)
@@ -76,12 +73,8 @@ let psection = pleft (pseq
                         (fun (x, y) -> Section(x, y)))
                         pnl1
 
+exprImpl :=  pseq (pseq psentiment pkeywords (fun (a, b) -> a::[b])) (pmany1 (psection_name <|> psection <|> pline)) (fun (a, b) -> a @ b)
 
-
-// exprImpl := variable <|> application <|> abstraction
-let pAll = pseq (pseq psentiment pkeywords (fun (a, b) -> a::[b])) (pmany1 (psection_name <|> psection <|> pline)) (fun (a, b) -> a @ b)
-
-exprImpl :=  pAll//pseq (pseq (pseq psentiment pkeywords (fun (a, b) -> a::[b])) psection (fun (a, b) -> b::a)) (pmany1 pline) (fun (a, b) -> a @ b)
 let grammar = pleft expr peof
 
 let parse s = 
