@@ -126,9 +126,9 @@ let evalSentiment sent =
     if sent = "happy" then happy_sentiment
     else if sent = "depressing" then depressing_sentiment
     else if sent = "angry" then angry_sentiment
-    else if sent = "funny" then funny_sentiment
+    else if sent = "funny" then funny_sentiment 
     else 
-        printfn "Warning %A is not a valid sentiment at this time" sent
+        if sent <> "" then printfn "Warning %A is not a valid sentiment at this time" sent
         []
 
 (*
@@ -259,22 +259,29 @@ let evalProg (ps: Expr list) =
                 matchAbstractType xs
 
             // if it is a instance of a section the parse each line and add them all
-            | Section_name var ->
-                let lines: Expr List = mySections[var] |> unbox
-                // parse each line
-                let linesToAdd: string list list = 
-                    List.foldBack
-                        (fun ex acc ->
-                        (match ex with
-                        // there should only be lines in a section
-                        | Line l -> (convert l wtf ftw cftw pftw)
-                        | _ -> 
-                            printfn "Warning should only be lines in a section"
-                            []
-                        ) :: acc) lines [] 
-                
-                // add to list
-                linesToAdd @ matchAbstractType xs
+            | Section_Instance var ->
+                if mySections.ContainsKey(var) then 
+                    let lines: Expr List = mySections[var] |> unbox
+                    // parse each line
+                    let linesToAdd: string list list = 
+                        List.foldBack
+                            (fun ex acc ->
+                            (match ex with
+                            // there should only be lines in a section
+                            | Line l -> (convert l wtf ftw cftw pftw)
+                            | _ -> 
+                                printfn "Warning should only be lines in a section"
+                                []
+                            ) :: acc) lines [] 
+                    
+                    // add to list
+                    linesToAdd @ matchAbstractType xs
+                else
+                    printfn "Section %A is undeclared and cannot be referenced" var
+                    printfn "Try declaring the section before you reference it"
+                    printfn "Exiting"
+
+                    exit(-1)
 
             // converts a single line
             | Line x ->
