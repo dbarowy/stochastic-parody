@@ -1,4 +1,7 @@
 bin
 obj
-code/out
-code/*.song
+docs/*.out
+docs/*.aux
+docs/*.log
+
+
