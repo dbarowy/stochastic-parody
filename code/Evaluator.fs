@@ -1,5 +1,5 @@
 module Evaluator
-open Parser
+open AST
 open System.IO
 open Sentiments
 open System.Collections
@@ -11,7 +11,7 @@ type feature = {emph: string; pos: string; rhyme: string}
 
 
 // flag to show how the translation is done
-let VERBOSE = false
+let VERBOSE = true
 
 // hashtable storing translations we have already used
 let reuse = new Hashtable()
@@ -27,7 +27,7 @@ let update_hashmap (map:Hashtable) key toadd =
         map.Add(key, box [toadd])
 
 // helper to change the values of a given key
-let update_remove_hashmap (map:Hashtable) key toadd =      
+let update_remove_hashmap (map:Hashtable) key toadd = 
     if map.ContainsKey(key) then
         // if we remove the next two lines vars are immutable
         map.Remove(key)
@@ -188,7 +188,7 @@ let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cft
                         // get a random word that matches the feature
                         let wordList: string list = (translator[correctFeat]) |> unbox
                         let len = wordList.Length
-                        let ind = rnd.Next() % (len)
+                        let ind = rnd.Next(len)
                         let newWord = wordList[ind] 
                         // adjust if we get the same word back that we put in
                         let fixedWord = 
@@ -225,7 +225,7 @@ let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cft
 * @param ps: a list of expressions that reprisents each part of the AST
 * @return a list of list strings that reprisent all the lines of the newly translated song
 *)
-let evalProg (ps: Expr list) = 
+let evalProg (ps: Grammar list) = 
 
     // generate the preferred word list anything that is not keywords or sentiment is irrelevant
     let wordList = 
@@ -244,11 +244,12 @@ let evalProg (ps: Expr list) =
     // this hashtable stores all of our sections (variables)
     let mySections = new Hashtable() // string (section_name) -> Line List
 
+
+    if VERBOSE then printfn "Word List: %A" wordList
     if VERBOSE then printfn "Assembing Dictionary"
     let wtf, ftw, cftw, pftw = readDict wordList
     if VERBOSE then printfn "Dictionary Complete"
-
-    let rec matchAbstractType (ls: Expr list) = 
+    let rec matchAbstractType (ls: Grammar list) = 
         match ls with
         | [] -> []
         | x::xs ->
@@ -261,7 +262,7 @@ let evalProg (ps: Expr list) =
             // if it is a instance of a section the parse each line and add them all
             | Section_Instance var ->
                 if mySections.ContainsKey(var) then 
-                    let lines: Expr List = mySections[var] |> unbox
+                    let lines: Grammar List = mySections[var] |> unbox
                     // parse each line
                     let linesToAdd: string list list = 
                         List.foldBack

@@ -1,10 +1,12 @@
 module Parser
 open Combinator
+open AST
 
-type TranslationUnit = {word: string; translate : bool; rhyme: bool}
 // TODO: make sure doesnt have weird ws bugs
 // TODO: can map numbers to words 1-> one
 // TODO: default to translate all?
+
+// TODO: in latex --> say that the result changes every time
 
 let TRANSLATE_DEFAULT = false
 
@@ -17,14 +19,8 @@ let TRANSLATE_DEFAULT = false
 // NOTE: variables are mutable
 // NOTE: have to have sentiment before keywords if have both --> hard to change if we let them be empty bc it will parse A as empty first
 // NOTE: everything is separated by 1 or more newline characters
+// NOTE: if you translate something without rhyme and then try to translate it with rhyme later, it will not rhyme and instead use the old translation --> if you need it to rhyme just rhyme the first instance
 
-
-type Expr =
-| Sentiment of string
-| Keywords of string List
-| Line of TranslationUnit List
-| Section_Instance of string
-| Section of string * (Expr List)
 
 // Initialize parser
 let expr, exprImpl = recparser()
@@ -32,13 +28,16 @@ let expr, exprImpl = recparser()
 // parser to allow ws around a given parser
 let ppad x = pbetween pws0 x pws0
 
-// parser for 1 or more newline characters
-let pnl1 = pmany1 pnl
-
 // parser for 1 or more spaces characters
 let pspace1 = pmany1 (pchar ' ')
 // parser for 0 or more spaces characters
 let pspace0 =  pmany0 (pchar ' ')
+
+// parser for 1 or more newline characters
+let pnl1 = pmany1 (pright pnl pspace0)
+
+let pend =  pseq (pmany0 (pchar ' ')) pnl1 (fun (x, y) -> ())
+
 
 // parser for ignoring white space and commas between word
 let pignore = (pbetween pspace0 ((pchar ',') |>> ignore) pspace0) <|> (pspace1 |>> ignore)
@@ -64,17 +63,17 @@ let pword_rhyme = pseq (pchar '$') pword (fun (x, y) -> {translate = (TRANSLATE_
 let pword_translation_unit = pword_no_translate <|> pword_translate <|> pword_rhyme
 
 // parser to parse a whole line of words of any variation and agregate them into a line
-let pline = pseq (pmany0 (pleft (pword_translation_unit) pignore)) (pleft pword_translation_unit pnl1) (fun (f, e) -> Line (f @ [e]))
+let pline = pseq (pright pspace0 pword_translation_unit) (pleft (pmany0 (pright pignore (pword_translation_unit) )) pend) (fun (f, e) -> Line (f :: e))
 
 // parser to parse the list of keywords, keywords can be separated by any number of spaces and at most 1 comma
 // this is an optional field
-let pkeywords = (pleft ((pright (pstr "<KEYWORDS>") (pmany0 (pright pignore pword))) |>> Keywords) pnl1) <|> (pws0 |>> (fun x -> Keywords []))
+let pkeywords = (pleft ((pright (pstr "{KEYWORDS}") (pmany0 (pright pignore pword))) |>> Keywords) (pend)) <|> (pws0 |>> (fun x -> Keywords []))
 
 // parser to parse the sentiment, this is an optional field
-let psentiment = (pleft (pright (pstr "<SENTIMENT>") (((pright pspace1 pword))  |>> Sentiment)) pnl1) <|> (pws0 |>> (fun x -> Sentiment ""))
+let psentiment = (pleft (pright (pstr "{SENTIMENT}") (((pright pspace1 pword))  |>> Sentiment)) (pend)) <|> (pws0 |>> (fun x -> Sentiment ""))
 
 // parser for an instance of a section, a section reference should be preceeded with the * character
-let psection_name = (pleft (pright (pchar '*') (pmany1 pletter)) pnl1) |>> stringify |>> Section_Instance
+let psection_instance = (pleft (pright (pchar '*') (pmany1 pletter)) (pend)) |>> stringify |>> Section_Instance
 
 // parser for declaring a section: a section declarating is of the following form:
 // section = [
@@ -88,26 +87,28 @@ let psection = pleft (pseq
                             (pmany1 (pright pwsNoNL0 pline))
                             (pbetween pws0 (pchar ']') pwsNoNL0))
                         (fun (x, y) -> Section(x, y)))
-                        pnl1
+                        (pend)
 
+
+let pbody = psection_instance <|> psection <|> pline
 // parser for the implementation of an expression
 // it techincally requires a sentiment and keywords as the first 2 expressions,
 // but those parser can parse nothing so they aren't really necesary
 // then it needs one or more line or section to be considered a song
 // all inputs also must end with a newline
-exprImpl :=  pseq (pseq psentiment pkeywords (fun (a, b) -> a::[b])) (pmany1 (psection_name <|> psection <|> pline)) (fun (a, b) -> a @ b)
+exprImpl :=  pseq (pseq psentiment pkeywords (fun (a, b) -> a::[b])) (pmany1 (pbody)) (fun (a, b) -> a @ b)
 
 // parser for the whole grammar
 // accepts as many newline characters as wanted before first expression
 // parses an expression as defined above until the end of the file
-let grammar = pright (pmany0 pnl) (pleft expr peof)
+let pgrammar = pright (pmany0 (pnl)) (pleft expr peof)
 
 // driver for parsing a given input
 // @param s: a string that is a .song file
 // prints error message if parse fails
 let parse s = 
-    let i = prepare s
-    match grammar i with
+    let i = debug s
+    match pgrammar i with
     | Success(ast, _) -> Some ast
     | Failure(pos, rule) -> 
         printfn "Invalid expression."
