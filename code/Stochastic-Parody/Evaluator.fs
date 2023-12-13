@@ -11,7 +11,7 @@ type feature = {emph: string; pos: string; rhyme: string}
 
 
 // flag to show how the translation is done
-let VERBOSE = false
+let VERBOSE = true
 
 // hashtable storing translations we have already used
 let reuse = new Hashtable()
@@ -106,8 +106,8 @@ let readDict (preferredArr: string list) =
         if wordToFeature.ContainsKey((i.ToUpper())) then
             let feat: feature = wordToFeature[(i.ToUpper())] |> unbox
             let noRhymeFeat: feature = {emph = feat.emph; pos = feat.pos; rhyme = ""}
-            update_hashmap commonFeatToWord feat i
-            update_hashmap commonFeatToWord noRhymeFeat i
+            update_hashmap commonFeatToWord feat (i.ToUpper())
+            update_hashmap commonFeatToWord noRhymeFeat (i.ToUpper())
         else 
             printfn "Warning: %A does not exist in the dictionary" i
 
@@ -118,8 +118,8 @@ let readDict (preferredArr: string list) =
             let feat: feature = wordToFeature[(i.ToUpper())] |> unbox
             let noRhymeFeat:feature = {emph = feat.emph; pos = feat.pos; rhyme = ""}
 
-            update_hashmap preferredFeatToWord feat i
-            update_hashmap preferredFeatToWord noRhymeFeat i
+            update_hashmap preferredFeatToWord feat (i.ToUpper())
+            update_hashmap preferredFeatToWord noRhymeFeat (i.ToUpper())
         else 
             printfn "Warning: %A does not exist in the dictionary" i
         )
