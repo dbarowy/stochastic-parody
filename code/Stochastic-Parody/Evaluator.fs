@@ -11,7 +11,7 @@ type feature = {emph: string; pos: string; rhyme: string}
 
 
 // flag to show how the translation is done
-let VERBOSE = true
+// let VERBOSE = true
 
 // hashtable storing translations we have already used
 let reuse = new Hashtable()
@@ -152,7 +152,7 @@ let evalSentiment sent =
 * @param pftw: A hashtable that maps features to the preferred words that match that feature
 * @return a list of strings of the translated words
 *)
-let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cftw: Hashtable) (pftw: Hashtable): string list=
+let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cftw: Hashtable) (pftw: Hashtable) (verboseFlag: bool): string list=
 
     let rnd = System.Random()
 
@@ -222,7 +222,7 @@ let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cft
                         reuse.Add(x.word.ToLower(), fixedWord)
                         
                         // this is just a verbose flag
-                        if VERBOSE then printfn "%A, %A, %A, %A" x.word fixedWord correctFeat tid
+                        if verboseFlag then printfn "%A, %A, %A, %A" x.word fixedWord correctFeat tid
                         
                         // add the word to the list
                         fixedWord::(helpConvert xs)
@@ -238,7 +238,7 @@ let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cft
 * @param ps: a list of expressions that reprisents each part of the AST
 * @return a list of list strings that reprisent all the lines of the newly translated song
 *)
-let evalProg (ps: Grammar list) = 
+let evalProg (ps: Grammar list) (verbose: bool) = 
 
     // generate the preferred word list anything that is not keywords or sentiment is irrelevant
     let wordList = 
@@ -258,10 +258,10 @@ let evalProg (ps: Grammar list) =
     let mySections = new Hashtable() // string (section_name) -> Line List
 
 
-    if VERBOSE then printfn "Word List: %A" wordList
-    if VERBOSE then printfn "Assembing Dictionary"
+    if verbose then printfn "Word List: %A" wordList
+    if verbose then printfn "Assembing Dictionary"
     let wtf, ftw, cftw, pftw = readDict wordList
-    if VERBOSE then printfn "Dictionary Complete"
+    if verbose then printfn "Dictionary Complete"
     let rec matchAbstractType (ls: Grammar list) = 
         match ls with
         | [] -> []
@@ -282,7 +282,7 @@ let evalProg (ps: Grammar list) =
                             (fun ex acc ->
                             (match ex with
                             // there should only be lines in a section
-                            | Line l -> (convert l wtf ftw cftw pftw)
+                            | Line l -> (convert l wtf ftw cftw pftw verbose)
                             | _ -> 
                                 printfn "Warning should only be lines in a section"
                                 []
@@ -299,7 +299,7 @@ let evalProg (ps: Grammar list) =
 
             // converts a single line
             | Line x ->
-                (convert x wtf ftw cftw pftw) :: matchAbstractType xs
+                (convert x wtf ftw cftw pftw verbose) :: matchAbstractType xs
 
             // does nothing if sees keywords or sentiment
             | _ -> matchAbstractType xs

@@ -76,7 +76,7 @@ type TestClass () =
                         ]
         let expected = "just a small town pearl\n"
 
-        let result = prettyprint (evalProg input)
+        let result = prettyprint (evalProg input false)
 
         Assert.AreEqual(expected, result)
 
@@ -95,7 +95,7 @@ type TestClass () =
         let result = parse randomInput
         try 
             let eval = match result with
-                        | Some output -> evalProg output
+                        | Some output -> (evalProg output false)
                         | None -> [[]]
             if eval = [[]] then Assert.IsTrue(false)
             printfn "%A" (prettyprint eval)

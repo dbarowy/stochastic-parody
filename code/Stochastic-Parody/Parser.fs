@@ -2,17 +2,12 @@ module Parser
 open Combinator
 open AST
 
-// TODO: make sure doesnt have weird ws bugs
-// TODO: can map numbers to words 1-> one
-// TODO: default to translate all?
-
-// TODO: in latex --> say that the result changes every time
-
+// future TODO: can map numbers to words 1-> one
+// future TODO: default to translate all?
 let TRANSLATE_DEFAULT = false
 
-// NOTE: line has to start at start of line
 // NOTE: cant reference var until declared
-// NOTE: do not leave keywords or sentiment blank
+// NOTE: do not leave keywords or sentiment blank --> but you can omit entirely
 // NOTE: have to have new line char before closing bracket of section
 // NOTE: ! is translate no rhyme
 // NOTE: $ is translate and rhyme
@@ -35,9 +30,10 @@ let pspace0 =  pmany0 (pchar ' ')
 
 // parser for 1 or more newline characters
 let pnl1 = pmany1 (pright pnl pspace0)
-
+// partser that allows for trailing whitespace after lines
 let pend =  pseq (pmany0 (pchar ' ')) pnl1 (fun (x, y) -> ())
 
+// parser that will ignore punctuation
 let ppunctuation = (pchar ',') <|> (pchar '?' ) <|> (pchar '.') <|> (pchar ':')  <|> (pchar ';')
 // parser for ignoring white space and commas between word
 let pignore = (pbetween pspace0 ((ppunctuation) |>> ignore) pspace0) <|> (pspace1 |>> ignore)
@@ -90,6 +86,7 @@ let psection = pleft (pseq
                         (pend)
 
 
+// parser for the body of the grammar, it can consist of sections and liness
 let pbody = psection_instance <|> psection <|> pline
 // parser for the implementation of an expression
 // it techincally requires a sentiment and keywords as the first 2 expressions,

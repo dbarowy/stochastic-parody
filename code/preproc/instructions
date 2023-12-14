@@ -1,0 +1,21 @@
+To preprocess the data first download the princeton data detailed in the docs references.
+
+Then run the following commands to extract the different parts of speech dictionaries
+
+egrep -o "^[0-9]{8}\s[0-9]{2}\s[a-z]\s[0-9]{2}\s[a-zA-Z]*\s" data.adj | cut -d ' ' -f 5 > conv.data.adj
+egrep -o "^[0-9]{8}\s[0-9]{2}\s[a-z]\s[0-9]{2}\s[a-zA-Z]*\s" data.adv | cut -d ' ' -f 5 > conv.data.adv
+egrep -o "^[0-9]{8}\s[0-9]{2}\s[a-z]\s[0-9]{2}\s[a-zA-Z]*\s" data.noun | cut -d ' ' -f 5 > conv.data.noun
+egrep -o "^[0-9]{8}\s[0-9]{2}\s[a-z]\s[0-9]{2}\s[a-zA-Z]*\s" data.verb | cut -d ' ' -f 5 > conv.data.verb
+Credit to: https://stackoverflow.com/questions/2288953/separate-word-lists-for-nouns-verbs-adjectives-etc
+
+Then remove duplicated as such
+
+sort -u conv.data.adj > dict_adj.txt
+Credit to: https://unix.stackexchange.com/questions/30173/how-to-remove-duplicate-lines-inside-a-text-file
+
+Then convert the files to all lowercase
+
+perl -pe '$_= lc($_)' input.txt > output.txt
+credit: https://linuxcommando.blogspot.com/2008/05/how-to-convert-text-files-to-all-upper.html
+
+Then run the posAdder.py script to generate a new cmu dictionary with the part of speech added
