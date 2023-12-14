@@ -14,11 +14,14 @@ let main args =
         try 
             File.ReadAllText args[0]
         with 
-        | :? FileNotFoundException -> 
+            | :? FileNotFoundException -> 
                 printfn "File not found\nUsage: dotnet run <file.song>"
                 exit(-99)
-        | ex -> printfn "Usage: dotnet run <file.song>"
+            | :? DirectoryNotFoundException ->
+                printfn "File not found\nUsage: dotnet run <file.song>"
                 exit(-99)
+            | ex -> printfn "Usage: dotnet run <file.song>"
+                    exit(-99)
 
     let verbose = if args.Length > 1 then
                     if args[1] = "verbose" || args[1] = "v" then true else false
