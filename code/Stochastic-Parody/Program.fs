@@ -20,7 +20,7 @@ let main args =
             | :? DirectoryNotFoundException ->
                 printfn "File not found\nUsage: dotnet run <file.song>"
                 exit(-99)
-            | ex -> printfn "Usage: dotnet run <file.song>"
+            | ex -> printfn "Usage: dotnet run <file.song>\n or \"dotnet run <file.song> verbose\" for info on translation"
                     exit(-99)
 
     let verbose = if args.Length > 1 then

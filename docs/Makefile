@@ -2,7 +2,10 @@
 
 all: docs.pdf
 
-specs: specifications.tex
+specs: specifications.tex references.bib
+	pdflatex specifications.tex
+	bibtex specifications.aux
+	pdflatex specifications.tex
 	pdflatex specifications.tex
 
 docs.pdf: docs.tex

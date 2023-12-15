@@ -1,0 +1,22 @@
+\begin{thebibliography}{3}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[AG(2023)]{commondict}
+Signum~International AG, 2023.
+\newblock URL
+  \url{https://www.ef.edu/english-resources/english-vocabulary/top-3000-words/}.
+
+\bibitem[Fellbaum and Tengi(2010)]{princeton}
+Christiane Fellbaum and Randee Tengi.
+\newblock Wordnet, 2010.
+\newblock URL \url{https://wordnet.princeton.edu/download/current-version}.
+
+\bibitem[Lenzo(2014)]{Lenzo}
+Kevin Lenzo, 2014.
+\newblock URL \url{http://www.speech.cs.cmu.edu/cgi-bin/cmudict}.
+
+\end{thebibliography}

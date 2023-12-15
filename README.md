@@ -12,6 +12,7 @@ There are 2 ways to evaluate a program written in this language:
 
 * from the solution level (the code/ directory) call dotnet run --project Stochastic-Parody <input.song>
 * from the project level (the code/Stochastic-Parody/ directory) call dotnet run <input.song>
+* both of these offer an optional second argument that  if set to v or verbose will display the interworkings of the translation
 
 
 We also provide a test suite for the project located at code/Stochastic-Parody-Tests/ that can be run by calling dotnet test

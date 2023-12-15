@@ -235,7 +235,7 @@ let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cft
                         reuse.Add(x.word.ToLower(), fixedWord)
                         
                         // this is just a verbose flag
-                        if verboseFlag then printfn "%A, %A, %A, %A" x.word fixedWord correctFeat tid
+                        if verboseFlag then printfn "%A --> %A from %A\nMatched Features: Emphasis: %A\nPart of Speech: %A\nRhyme: %A\n" (x.word.ToLower()) (fixedWord.ToLower()) tid correctFeat.emph correctFeat.pos correctFeat.rhyme 
                         
                         // add the word to the list
                         fixedWord::(helpConvert xs)
