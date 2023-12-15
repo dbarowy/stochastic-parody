@@ -66,6 +66,13 @@ let readDict (preferredArr: string list) =
     let dictArr = dict.Split('\n')
     let commonArr = common.Split('\n')
 
+    // helper function to get the last syllable of a word
+    let rec lastSylGetter (l:string list) =
+        match l with 
+        | x::xs when (x.Contains("2") || x.Contains("1") || x.Contains("0")) -> [x]
+        | x::xs -> x::(lastSylGetter xs)
+        | [] -> []
+
     // fill the CMU dict hashtable
     let dummy = dictArr |> Array.map (fun i -> 
         let spl: string list = i.Split(' ') |> Array.toList
@@ -74,12 +81,6 @@ let readDict (preferredArr: string list) =
         let prnc:string list = spl[2..len - 1]
 
         let checker = prnc |> List.rev
-
-        let rec lastSylGetter (l:string list) =
-            match l with 
-            | x::xs when (x.Contains("2") || x.Contains("1") || x.Contains("0")) -> [x]
-            | x::xs -> x::(lastSylGetter xs)
-            | [] -> []
 
 
 

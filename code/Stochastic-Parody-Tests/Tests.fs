@@ -11,6 +11,7 @@ open Evaluator
 [<TestClass>]
 type TestClass () =
 
+    // method to test that the parser parses a line correctly
     [<TestMethod>]
     member this.correctlyParsesLine () =
         let input = "Just a $small !town girl\n"
@@ -28,6 +29,7 @@ type TestClass () =
         | Some output -> Assert.AreEqual(expected, output)
         | None -> Assert.IsTrue(false)
 
+    // method to test that the parser can parse any line that does not contain illegal symbols
     [<TestMethod>]
     member this.canParseAnyLineWithoutSymbols () =
         let rnd = System.Random()
@@ -45,7 +47,7 @@ type TestClass () =
         | true -> Assert.IsTrue(true)
         | false -> Assert.IsTrue(false)
 
-
+    // method to test that parser never throws exception no matter the input
     [<TestMethod>]
     member this.parserDoesntThrowException () =
         let rnd = System.Random()
@@ -62,6 +64,7 @@ type TestClass () =
 
         Assert.IsTrue(true)
 
+    // method to test that parser correctly uses the preffered list of words first 
     [<TestMethod>]
     member this.correctlyEvaluatesExpressionUsingPreferredList () =
 
@@ -81,7 +84,7 @@ type TestClass () =
         Assert.AreEqual(expected, result)
 
 
-
+    // method to test that evaluator never throws an exception
     [<TestMethod>]
     member this.EvaluatorDoesntThrowException () =
         let rnd = System.Random()

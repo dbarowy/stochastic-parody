@@ -1,5 +1,7 @@
 module Helper
 
+// helper method to generate random string of words with random character
+// essentially generates garbage input
 let generateRandomLine (random: System.Random)  = 
     let candidate = "qwertyuiopasdfghjklzxcvbnm      "
     // let rnd = System.Random()
@@ -10,6 +12,9 @@ let generateRandomLine (random: System.Random)  =
     
     line
 
+// helper method to generate random string of words with random characters
+// essentially generates garbage input
+// also includes special characters
 let generateRandomLineWithSymbols (random: System.Random)  = 
     let candidate = "qwertyuiopasdfghjklzxcvbnm$$!![]={}      "
     // let rnd = System.Random()
