@@ -4,4 +4,7 @@ docs/*.out
 docs/*.aux
 docs/*.log
 
+docs/*.bbl
+docs/*.blg
+
 
