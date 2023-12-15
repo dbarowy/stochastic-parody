@@ -1,25 +1,13 @@
+{SENTIMENT} sad
+{KEYWORDS} ponder
 
-{KEYWORDS}
-!Hey there, Delilah
-What's it like in New York city?
-I'm a !thousand miles $away
-But, girl, tonight you look so pretty
-Yes, you do
-Times !Square can't shine $as bright as you
-I swear, it's true
-Hey there, Delilah
-Don't you worry about the $distance
+bar = [
+    Twinkle twinkle !little $star.
+    How I $wonder what you $are.
 
-section = [
-    I'm !right there if you get lonely
-    Give this song another $listen
-    Close your eyes
 ]
 
-Listen to my voice, $it's my disguise
-I'm by your side
-*section
-
-filler 
-
-*section
+*bar
+Up above the !world so $high.
+Like a diamond in the $sky.
+*bar

@@ -70,8 +70,20 @@ let readDict (preferredArr: string list) =
     let dummy = dictArr |> Array.map (fun i -> 
         let spl: string list = i.Split(' ') |> Array.toList
         let len = (List.length spl)
-        // we consider the rhyme the last 2 syllables matching unless there are 2 or less syllables then it is only the last
-        let myRhyme:string list = (if len <= 3 then [spl[len - 1]] else [spl[len - 2] ; spl[len - 1]])
+        // we consider two words to rhyme if the last syllables match
+        let prnc:string list = spl[2..len - 1]
+
+        let checker = prnc |> List.rev
+
+        let rec lastSylGetter (l:string list) =
+            match l with 
+            | x::xs when (x.Contains("2") || x.Contains("1") || x.Contains("0")) -> [x]
+            | x::xs -> x::(lastSylGetter xs)
+            | [] -> []
+
+
+
+        let myRhyme = lastSylGetter checker |> List.rev
         let myStringRhyme = String.concat "" myRhyme 
 
         // POS = part of speech and is added to the dictionary in preprocessing in this slot
@@ -135,7 +147,7 @@ let readDict (preferredArr: string list) =
 *)
 let evalSentiment sent = 
     if sent = "happy" then happy_sentiment
-    else if sent = "depressing" then depressing_sentiment
+    else if sent = "sad" then sad_sentiment
     else if sent = "angry" then angry_sentiment
     else if sent = "funny" then funny_sentiment 
     else 
