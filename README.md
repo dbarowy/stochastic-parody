@@ -1,8 +1,6 @@
 # Stochastic Parody
 
-# NOT DONE YET
-
-##Programming language developed by Matt Laws and Leah Williams
+## Programming language developed by Matt Laws and Leah Williams
 
 ### Stochastic Parody is a programming language that allows for simple creation of songs / parodies build using F#. 
 
@@ -16,6 +14,9 @@ There are 2 ways to evaluate a program written in this language:
 * from the project level (the code/Stochastic-Parody/ directory) call dotnet run <input.song>
 * both of these offer an optional second argument that  if set to v or verbose will display the interworkings of the translation
 
+The output of the program will be a printed out parody according to the specifcations of your program
+
+You can save your song to a file by redirecting the stdout as such: dotnet run infile.song > outfile
 
 We also provide a test suite for the project located at code/Stochastic-Parody-Tests/ that can be run by calling dotnet test
 

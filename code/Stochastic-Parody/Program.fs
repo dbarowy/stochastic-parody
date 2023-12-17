@@ -1,6 +1,5 @@
 open Parser
 open Evaluator
-open Combinator
 open System.IO
 
 (*
@@ -26,7 +25,8 @@ let main args =
     let verbose = if args.Length > 1 then
                     if args[1] = "verbose" || args[1] = "v" then true else false
                   else false
-    // let verbose = false
+
+    // parse and evaluate input
     let astOp = parse input
     match astOp with
     | Some ast -> printfn "%A" (prettyprint (evalProg ast verbose))

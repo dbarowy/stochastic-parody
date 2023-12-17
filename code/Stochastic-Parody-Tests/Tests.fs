@@ -64,7 +64,7 @@ type TestClass () =
 
         Assert.IsTrue(true)
 
-    // method to test that parser correctly uses the preffered list of words first 
+    // method to test that parser / evaluator correctly use the preferred list of words first 
     [<TestMethod>]
     member this.correctlyEvaluatesExpressionUsingPreferredList () =
 

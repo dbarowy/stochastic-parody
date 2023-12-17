@@ -4,14 +4,10 @@ open System.IO
 open Sentiments
 open System.Collections
 
-// lets put everything in twice --> once with real rhyme match the other with 
+// We insert everything in into dictionary twice --> once with real rhyme match the other with 
 // "" rhyme match to match w things that dont need to rhyme
 type feature = {emph: string; pos: string; rhyme: string}
 // hashmaps are word -> feature
-
-
-// flag to show how the translation is done
-// let VERBOSE = true
 
 // hashtable storing translations we have already used
 let reuse = new Hashtable()
@@ -37,11 +33,11 @@ let update_remove_hashmap (map:Hashtable) key toadd =
         map.Add(key, box toadd)
 
 (*
-* Function that parses all of our dictionary files and returns a series of hashtables that contain all the data. 
-* Warns if words in the preferred array (keywords) aren't in the CMU dict.
-* @param preferredArr: An array of words that is the combination of sentiment and keywords we will build a dictionary out of them
-* @return a 4-tuple of all of the dictionaries we need: one that maps words to their features for the first step of translation
-* and then 3 that map features to the list of words that match that feature for the preferred, common and whole dictionary
+ * Function that parses all of our dictionary files and returns a series of hashtables that contain all the data. 
+ * Warns if words in the preferred array (keywords) aren't in the CMU dict.
+ * @param preferredArr: An array of words that is the combination of sentiment and keywords -- we will build a dictionary out of them
+ * @return a 4-tuple of all of the dictionaries we need: one that maps words to their features for the first step of translation
+ * and then 3 that map features to the list of words that match that feature for the preferred, common and whole dictionary
 *)
 let readDict (preferredArr: string list) =
     let wordToFeature = new Hashtable()
@@ -49,6 +45,8 @@ let readDict (preferredArr: string list) =
     let commonFeatToWord = new Hashtable()
     let preferredFeatToWord = new Hashtable()
 
+    // the __SOURCE_DIRECTORY__ refers to the code/Stochastic-Parody because that is the location
+    // where the source code lives this is so the program can always find the dictionary files
     let cmu_file = Path.Combine(__SOURCE_DIRECTORY__, "new_cmu_pos_dict.txt")
     let common_file = Path.Combine(__SOURCE_DIRECTORY__, "new_common.txt")
 
@@ -66,7 +64,7 @@ let readDict (preferredArr: string list) =
     let dictArr = dict.Split('\n')
     let commonArr = common.Split('\n')
 
-    // helper function to get the last syllable of a word
+    // helper function to get the last syllable of a word returns a string list of the sounds of the last syllable
     let rec lastSylGetter (l:string list) =
         match l with 
         | x::xs when (x.Contains("2") || x.Contains("1") || x.Contains("0")) -> [x]
@@ -80,10 +78,8 @@ let readDict (preferredArr: string list) =
         // we consider two words to rhyme if the last syllables match
         let prnc:string list = spl[2..len - 1]
 
+        // sets up rhyme
         let checker = prnc |> List.rev
-
-
-
         let myRhyme = lastSylGetter checker |> List.rev
         let myStringRhyme = String.concat "" myRhyme 
 
@@ -103,16 +99,16 @@ let readDict (preferredArr: string list) =
 
         // setting up the 2 feature records
         let myFeature = {emph = myEmph; pos = myPOS; rhyme = myStringRhyme}
-        let myEmphPOSandNoRhyme = {emph = myEmph; pos = myPOS; rhyme = ""}
+        let myFeatureNoRhyme = {emph = myEmph; pos = myPOS; rhyme = ""}
 
-        // update the hashtable
+        // update the hashtables
         wordToFeature.Add(spl[0], box myFeature)
         update_hashmap featToWord myFeature spl[0]
-        update_hashmap featToWord myEmphPOSandNoRhyme spl[0]
+        update_hashmap featToWord myFeatureNoRhyme spl[0]
 
         )
 
-    // fill the common array hashtable by querying the now existing CMU hastable
+    // fill the common array hashtable by querying the now existing CMU hashtable
     let dummy = commonArr |> Array.map (fun i ->
 
         // warn if it is not in the CMU dict --> if not it the dict we dont know its features
@@ -125,8 +121,10 @@ let readDict (preferredArr: string list) =
             printfn "Warning: %A does not exist in the dictionary" i
 
         )
-    // fill the preferred array hashtable by querying the now existing CMU hastable
+    // fill the preferred array hashtable by querying the now existing CMU hashtable
     let dummy = preferredArr |> List.map (fun i ->
+    
+        // warn if it is not in the CMU dict --> if not it the dict we dont know its features
         if wordToFeature.ContainsKey((i.ToUpper())) then
             let feat: feature = wordToFeature[(i.ToUpper())] |> unbox
             let noRhymeFeat:feature = {emph = feat.emph; pos = feat.pos; rhyme = ""}
@@ -169,7 +167,7 @@ let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cft
 
     let rnd = System.Random()
 
-    // go throught the whole list
+    // go throught the whole line
     let rec helpConvert (ls: TranslationUnit list) = 
         match (ls: TranslationUnit list) with 
         | [] -> []
@@ -181,7 +179,7 @@ let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cft
                         let reusedWord = reuse[x.word.ToLower()] |> unbox
                         reusedWord::(helpConvert xs)
                     else
-                        // if the word is not contained in our dictionary give a warning
+                        // if the word is not contained in our dictionary give a warning and exit
                         if wtf.ContainsKey(x.word.ToUpper()) = false then 
                                 printfn "Word %A is not contained in the CMU Dictionary" x.word
                                 printfn "Word can still exist in input but cannot be translated"
@@ -193,6 +191,7 @@ let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cft
                         let myFeat: feature = wtf[(x.word.ToUpper())] |> unbox
                         let correctFeat = if (x.rhyme) then myFeat else {emph = myFeat.emph; pos = myFeat.pos; rhyme = ""}
                         // determine which translator to use, order is preferred then common then general
+                        // can use a translator if it contains the entry we need
                         let translator, tid = (
                             if (pftw.ContainsKey(correctFeat) && 
                                 ((((unbox pftw[correctFeat]): string list).Length > 1) || ((unbox pftw[correctFeat]): string list)[0] <> x.word.ToUpper())) then
@@ -204,6 +203,7 @@ let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cft
                             else if (ftw.ContainsKey(correctFeat)) then
                                 ftw, "General"
                             else
+                                // word failed to be translated -- this is an exceptional case that shouldn't ever hit
                                 printfn "Word %A could not be translated because feat %A DNE" x.word correctFeat
                                 printfn "Word can still exist in input but cannot be translated"
                                 printfn "Remove translation flag and try again"
@@ -211,7 +211,7 @@ let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cft
                                 exit(-1)
                             )
 
-                        // get a random word that matches the feature
+                        // get a random word that matches the feature from the translator
                         let wordList: string list = (translator[correctFeat]) |> unbox
                         let len = wordList.Length
                         let ind = rnd.Next(len)
@@ -222,25 +222,27 @@ let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cft
                                 if (len > 1) then
                                     wordList[(ind + 1) % len]
                                 else 
+                                    // failed to translate bc only word that matches is itself, but continues executing
                                     printfn "Warning: no match was found for %A" x.word
                                     newWord
                             else 
                                 newWord
 
-                        // remove the word we translated the inital word to from the potential words and add it the the current mappings
+                        // remove the new word from the potential words and add it the the current mappings
+                        // now all future instances of the old word will map to this new word
                         let updatedWordList = wordList |> List.filter(fun x -> x <> fixedWord)
                         translator.Remove(correctFeat)
                         if updatedWordList.Length <> 0 then
                             translator.Add(correctFeat, updatedWordList)
                         reuse.Add(x.word.ToLower(), fixedWord)
                         
-                        // this is just a verbose flag
+                        // prints verbose output
                         if verboseFlag then printfn "%A --> %A from %A\nMatched Features: Emphasis: %A\nPart of Speech: %A\nRhyme: %A\n" (x.word.ToLower()) (fixedWord.ToLower()) tid correctFeat.emph correctFeat.pos correctFeat.rhyme 
                         
                         // add the word to the list
                         fixedWord::(helpConvert xs)
                 else 
-                    // word is not supposed to be translated append as is
+                    // word is not supposed to be translated appends as is
                     x.word::(helpConvert xs)
                     
     helpConvert lines
@@ -253,7 +255,7 @@ let convert (lines: TranslationUnit list) (wtf: Hashtable) (ftw: Hashtable) (cft
 *)
 let evalProg (ps: Grammar list) (verbose: bool) = 
 
-    // generate the preferred word list anything that is not keywords or sentiment is irrelevant
+    // generate the preferred word list, anything that is not keywords or sentiment is irrelevant
     let wordList = 
         (match ps[0] with
         | Sentiment x -> evalSentiment x
@@ -270,27 +272,31 @@ let evalProg (ps: Grammar list) (verbose: bool) =
     // this hashtable stores all of our sections (variables)
     let mySections = new Hashtable() // string (section_name) -> Line List
 
-
+    // prints verbose output
     if verbose then printfn "Word List: %A" wordList
     if verbose then printfn "Assembing Dictionary"
+    // reads the dictionaries and creates the translators
     let wtf, ftw, cftw, pftw = readDict wordList
     if verbose then printfn "Dictionary Complete"
+
+    // evaluates the body of the code
     let rec matchAbstractType (ls: Grammar list) = 
         match ls with
         | [] -> []
         | x::xs ->
             match x with
-            // if it is a section declaration then add the section to the hashtable
+            // if it is a section declaration then add the section to the hashtable and continue
             | Section (name, lines) -> 
                 update_remove_hashmap mySections name lines
                 matchAbstractType xs
 
-            // if it is a instance of a section the parse each line and add them all
+            // if it is a instance of a section the parse each line and add them all then continue
             | Section_Instance var ->
                 if mySections.ContainsKey(var) then 
                     let lines: Grammar List = mySections[var] |> unbox
                     // parse each line
                     let linesToAdd: string list list = 
+                        // parses all lines and combines them into a list
                         List.foldBack
                             (fun ex acc ->
                             (match ex with
@@ -304,13 +310,14 @@ let evalProg (ps: Grammar list) (verbose: bool) =
                     // add to list
                     linesToAdd @ matchAbstractType xs
                 else
+                    // if the section trying to be referenced DNE
                     printfn "Section %A is undeclared and cannot be referenced" var
                     printfn "Try declaring the section before you reference it"
                     printfn "Exiting"
 
                     exit(-1)
 
-            // converts a single line
+            // translates a single line
             | Line x ->
                 (convert x wtf ftw cftw pftw verbose) :: matchAbstractType xs
 
@@ -322,7 +329,7 @@ let evalProg (ps: Grammar list) (verbose: bool) =
 (*
 * Function that prints the result of the evaluation nicely as lines of a song
 * @param p: a list lines (lists of strings) to print nicely
-* @return a set of lyrics
+* @return a string set of lyrics
 *)
 let rec prettyprint (p: string list list): string =
     match p with
