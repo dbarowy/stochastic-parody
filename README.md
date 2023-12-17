@@ -1,5 +1,7 @@
 # Stochastic Parody
 
+# NOT DONE YET
+
 ##Programming language developed by Matt Laws and Leah Williams
 
 ### Stochastic Parody is a programming language that allows for simple creation of songs / parodies build using F#. 
